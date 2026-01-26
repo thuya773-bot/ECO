@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MM 2D Smart Live</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; margin: 0; display: flex; justify-content: center; }
+        .app-container { width: 100%; max-width: 400px; background: white; min-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d); color: white; padding: 25px 20px; text-align: center; border-bottom-left-radius: 30px; border-bottom-right-radius: 30px; }
+        
+        .live-number { font-size: 85px; font-weight: bold; margin: 5px 0; display: inline-block; transition: all 0.5s; }
+        .shuffling { opacity: 0.8; color: #f1c40f; }
+        .fixed { opacity: 1; color: #ffffff; text-shadow: 2px 2px 10px rgba(0,0,0,0.3); }
+
+        .date-display { font-size: 15px; font-weight: bold; color: #f1c40f; margin-bottom: 5px; }
+        .time-display { font-size: 18px; background: rgba(0,0,0,0.3); padding: 8px 20px; border-radius: 20px; display: inline-block; font-weight: bold; font-family: monospace; }
+
+        .result-section { padding: 20px; }
+        .table-title { border-left: 5px solid #b21f1f; padding-left: 10px; margin: 20px 0 10px; }
+        .result-table { width: 100%; border-collapse: collapse; background: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-align: center; font-size: 14px; }
+        .result-table th, .result-table td { padding: 12px; border-bottom: 1px solid #eee; }
+        .highlight-2d { font-weight: bold; font-size: 20px; color: #b21f1f; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">
+        <h3 style="margin:0; opacity: 0.8; font-size: 14px;">ECO 2D LIVE</h3>
+        <div class="info-bar" style="margin: 15px 0;">
+            <div id="display-date" class="date-display">-- / -- / ---- (---)</div>
+            <div id="display-clock" class="time-display">00:00:00 AM</div>
+        </div>
+        <div id="num" class="live-number shuffling">--</div>
+    </div>
+
+    <div class="result-section">
+        <div class="table-title"><h4>12:01 PM RESULT</h4></div>
+        <table class="result-table">
+            <thead><tr><th>Set</th><th>Value</th><th>2D</th></tr></thead>
+            <tbody>
+                <tr><td id="m-set">Running...</td><td id="m-val">Running...</td><td id="m-2d" class="highlight-2d">--</td></tr>
+            </tbody>
+        </table>
+
+        <div class="table-title"><h4>04:30 PM RESULT</h4></div>
+        <table class="result-table">
+            <thead><tr><th>Set</th><th>Value</th><th>2D</th></tr></thead>
+            <tbody>
+                <tr><td id="e-set">Running...</td><td id="e-val">Running...</td><td id="e-2d" class="highlight-2d">--</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // --- ၁။ အချိန်နဲ့ ရက်စွဲကို Auto လုပ်ဆောင်ပေးမည့်အပိုင်း (Firebase မလိုပါ) ---
+    function startRealTime() {
+        setInterval(() => {
+            const now = new Date();
+            
+            // အချိန် (Time)
+            const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+            document.getElementById('display-clock').innerText = timeStr;
+
+            // ရက်စွဲ (Date)
+            const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            // နေ့ရက် (Day)
+            const dayStr = now.toLocaleDateString('en-US', { weekday: 'long' });
+            document.getElementById('display-date').innerText = dateStr + " (" + dayStr + ")";
+        }, 1000);
+    }
+    startRealTime();
+
+    // --- ၂။ ၅ စက္ကန့်တစ်ခါ ဂဏန်း Auto Run ပေးမည့်အပိုင်း ---
+    setInterval(() => {
+        const numEl = document.getElementById('num');
+        if (numEl.classList.contains('shuffling')) {
+            const randomNum = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+            numEl.innerText = randomNum;
+        }
+    }, 5000);
+</script>
+
+<script type="module">
+    // --- ၃။ Firebase မှ Data များကို ဆွဲယူမည့်အပိုင်း ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    // သင့်ရဲ့ Firebase URL ကို ဒီမှာထည့်ပါ
+    const firebaseConfig = { databaseURL: "သင့်ရဲ့_FIREBASE_URL_ဒီမှာထည့်ပါ" };
+    
+    try {
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        onValue(ref(db, '/'), (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const numElement = document.getElementById('num');
+                
+                // Live 2D Logic
+                if (data.live2d && data.live2d !== "--" && data.live2d !== "") {
+                    numElement.innerText = data.live2d;
+                    numElement.classList.remove('shuffling');
+                    numElement.classList.add('fixed');
+                } else {
+                    numElement.classList.add('shuffling');
+                    numElement.classList.remove('fixed');
+                }
+
+                // Table Data Updates
+                if(data.morning_set) document.getElementById('m-set').innerText = data.morning_set;
+                if(data.morning_val) document.getElementById('m-val').innerText = data.morning_val;
+                if(data.morning_2d) document.getElementById('m-2d').innerText = data.morning_2d;
+                
+                if(data.evening_set) document.getElementById('e-set').innerText = data.evening_set;
+                if(data.evening_val) document.getElementById('e-val').innerText = data.evening_val;
+                if(data.evening_2d) document.getElementById('e-2d').innerText = data.evening_2d;
+            }
+        });
+    } catch (error) {
+        console.log("Firebase ချိတ်ဆက်မှု အမှားရှိနေပါတယ်");
+    }
+</script>
+
+</body>
+</html>
