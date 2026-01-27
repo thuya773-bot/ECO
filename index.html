@@ -16,12 +16,12 @@
         body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-light); margin: 0; display: flex; justify-content: center; }
         .app-container { width: 100%; max-width: 450px; background: white; min-height: 100vh; box-shadow: 0 0 30px rgba(0,0,0,0.15); }
         
+        /* Header & Live Box */
         .header { background: linear-gradient(135deg, var(--primary-blue), var(--accent-red), var(--gold)); color: white; padding: 25px 20px; text-align: center; border-bottom-left-radius: 35px; border-bottom-right-radius: 35px; }
         .logo-text { font-size: 20px; font-weight: bold; letter-spacing: 3px; margin-bottom: 12px; text-shadow: 1px 1px 4px rgba(0,0,0,0.3); }
         
-        /* ဂဏန်းခုန်နှုန်း ပိုမြန်အောင် transition ကို လျှော့ထားသည် */
-        .live-number { font-size: 100px; font-weight: bold; margin: 5px 0; display: inline-block; min-width: 140px; font-variant-numeric: tabular-nums; }
-        .shuffling { opacity: 0.9; color: #f1c40f; }
+        .live-number { font-size: 100px; font-weight: bold; margin: 5px 0; display: inline-block; min-width: 140px; transition: opacity 0.3s ease; }
+        .shuffling { opacity: 0.8; color: #f1c40f; }
         .fixed { opacity: 1; color: #ffffff; text-shadow: 0 4px 15px rgba(0,0,0,0.5); }
 
         .date-display { font-size: 14px; font-weight: 600; color: #f1c40f; margin-bottom: 5px; }
@@ -41,7 +41,6 @@
         .color-tip { color: var(--success-green) !important; font-weight: 800; font-size: 17px; }
         
         .weekly-table thead th { background-color: #444; color: white; }
-        .weekly-table tr:nth-child(even) { background-color: #f9f9f9; }
         .day-name { font-weight: bold; color: #1a2a6c; text-align: left; padding-left: 15px !important; background: #f0f0f0; width: 100px; }
     </style>
 </head>
@@ -94,35 +93,43 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    function updateDateTime() {
+    // နာရီ Update
+    function updateClock() {
         const now = new Date();
         document.getElementById('display-clock').innerText = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
         const dateOptions = { day: '2-digit', month: 'short', year: 'numeric' };
         const dayOptions = { weekday: 'long' };
         document.getElementById('display-date').innerText = now.toLocaleDateString('en-GB', dateOptions) + " (" + now.toLocaleDateString('en-US', dayOptions) + ")";
     }
-    setInterval(updateDateTime, 1000);
+    setInterval(updateClock, 1000);
+    updateClock();
 
-    // --- High Speed Sync Random Logic ---
-    function getFastSyncRandom() {
+    // --- ၇ စက္ကန့် Sync & Random Logic ---
+    function getSyncRandomDigit() {
         const now = new Date();
-        // ၀.၁ စက္ကန့် (100ms) တိုင်းမှာ Seed တစ်ခုပြောင်းမယ်
-        const seed = Math.floor(now.getTime() / 100); 
+        // ၇ စက္ကန့် (7000ms) တိုင်းအတွက် Seed တစ်ခုထုတ်သည်
+        const seed = Math.floor(now.getTime() / 7000);
         
-        // Linear Congruential Generator (LCG) - အစဉ်လိုက်မဖြစ်အောင် ရောမွှေရန်
-        let x = (seed * 48271) % 2147483647;
+        // Random အရောအနှော Algorithm (LCG)
+        // ဖုန်းအားလုံးမှာ ၇ စက္ကန့်အတွင်း ဒီတွက်ချက်မှုအရ ထွက်လာတဲ့ဂဏန်းက အတူတူပဲဖြစ်နေမှာပါ
+        let x = (seed * 1103515245 + 12345) % 2147483647;
         let randomNum = Math.floor((x / 2147483647) * 100);
         
         return randomNum.toString().padStart(2, '0');
     }
 
-    // ၀.၁ စက္ကန့်တိုင်း ဂဏန်းကို အသစ်လဲမည်
-    setInterval(() => {
+    // ၀.၅ စက္ကန့်တိုင်းမှာ လက်ရှိ ၇ စက္ကန့်အပိုင်းအခြားထဲက ဂဏန်းကို စစ်ဆေးပြီး လိုအပ်မှပြောင်းလဲမည်
+    function refreshLiveDigit() {
         const numEl = document.getElementById('num');
         if (numEl.classList.contains('shuffling')) {
-            numEl.innerText = getFastSyncRandom();
+            const currentSyncNum = getSyncRandomDigit();
+            // လက်ရှိပြနေတဲ့ဂဏန်းနဲ့ မတူမှသာ အသစ်လဲမည် (၇ စက္ကန့်ပြည့်မှ တစ်ခါလဲရန်)
+            if (numEl.innerText !== currentSyncNum) {
+                numEl.innerText = currentSyncNum;
+            }
         }
-    }, 100);
+    }
+    setInterval(refreshLiveDigit, 500);
 
     onValue(ref(db, '/'), (snapshot) => {
         const data = snapshot.val();
@@ -139,34 +146,4 @@
         document.getElementById('e-tip').innerText = data.evening_tip || "--";
 
         const numEl = document.getElementById('num');
-        // Live Number Logic
-        if (data.live_status === "fixed_m" && data.morning_set && data.morning_val) {
-            numEl.innerText = data.morning_set.toString().slice(-1) + data.morning_val.toString().slice(-1);
-            numEl.classList.replace('shuffling', 'fixed');
-        } 
-        else if (data.live_status === "fixed_e" && data.evening_set && data.evening_val) {
-            numEl.innerText = data.evening_set.toString().slice(-1) + data.evening_val.toString().slice(-1);
-            numEl.classList.replace('shuffling', 'fixed');
-        } 
-        else {
-            numEl.classList.add('shuffling');
-            numEl.classList.remove('fixed');
-        }
-
-        const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-        let weeklyHtml = "";
-        days.forEach(day => {
-            weeklyHtml += `
-                <tr>
-                    <td class="day-name">${day.toUpperCase()}</td>
-                    <td style="color: var(--accent-red); font-weight:700;">${data[day + '_m'] || '--'}</td>
-                    <td style="color: var(--primary-blue); font-weight:700;">${data[day + '_e'] || '--'}</td>
-                </tr>`;
-        });
-        document.getElementById('weekly-body').innerHTML = weeklyHtml;
-    });
-</script>
-
-</body>
-</html>
-
+        if (data.live_status === "fixed_m" && data.morning
