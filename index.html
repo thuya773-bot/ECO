@@ -16,18 +16,16 @@
         body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-light); margin: 0; display: flex; justify-content: center; }
         .app-container { width: 100%; max-width: 450px; background: white; min-height: 100vh; box-shadow: 0 0 30px rgba(0,0,0,0.15); }
         
-        /* Header & Live Box */
         .header { background: linear-gradient(135deg, var(--primary-blue), var(--accent-red), var(--gold)); color: white; padding: 25px 20px; text-align: center; border-bottom-left-radius: 35px; border-bottom-right-radius: 35px; }
         .logo-text { font-size: 20px; font-weight: bold; letter-spacing: 3px; margin-bottom: 12px; text-shadow: 1px 1px 4px rgba(0,0,0,0.3); }
         
-        .live-number { font-size: 100px; font-weight: bold; margin: 5px 0; display: inline-block; transition: all 0.5s ease; min-width: 140px; }
+        .live-number { font-size: 100px; font-weight: bold; margin: 5px 0; display: inline-block; transition: all 0.4s ease; min-width: 140px; }
         .shuffling { opacity: 0.8; color: #f1c40f; }
         .fixed { opacity: 1; color: #ffffff; text-shadow: 0 4px 15px rgba(0,0,0,0.5); }
 
         .date-display { font-size: 14px; font-weight: 600; color: #f1c40f; margin-bottom: 5px; }
         .time-display { font-size: 18px; background: rgba(0,0,0,0.3); padding: 8px 25px; border-radius: 20px; display: inline-block; font-weight: bold; font-family: 'Courier New', monospace; }
 
-        /* Main Section */
         .result-section { padding: 25px 15px; }
         .table-title { border-left: 5px solid var(--accent-red); padding-left: 12px; margin: 25px 0 12px; font-weight: bold; color: var(--primary-blue); font-size: 18px; text-transform: uppercase; }
         
@@ -110,7 +108,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // ၁။ Auto Date & Clock
     function updateDateTime() {
         const now = new Date();
         document.getElementById('display-clock').innerText = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
@@ -121,23 +118,32 @@
     setInterval(updateDateTime, 1000);
     updateDateTime();
 
-    // ၂။ Sync Shuffling Logic (ဖုန်းအားလုံး ဂဏန်းတူညီစေရန်)
-    function syncShuffle() {
+    // --- Sync & Random Shuffling Algorithm ---
+    function getSyncRandom() {
+        const now = new Date();
+        // ၇ စက္ကန့်တိုင်းမှာ Seed တစ်ခုပြောင်းမယ်
+        const seed = Math.floor(now.getTime() / 7000); 
+        
+        // Linear Congruential Generator (LCG) - ဂဏန်းတွေ Random ဆန်ဆန် ကွဲထွက်နေအောင် တွက်ချက်ခြင်း
+        // Formula: (a * seed + c) % m
+        const a = 1664525;
+        const c = 1013904223;
+        const m = Math.pow(2, 32);
+        
+        const randomHash = (a * seed + c) % m;
+        const finalNum = Math.floor((randomHash / m) * 100);
+        return finalNum.toString().padStart(2, '0');
+    }
+
+    function updateShuffle() {
         const numEl = document.getElementById('num');
         if (numEl.classList.contains('shuffling')) {
-            const now = new Date();
-            // လက်ရှိ စက္ကန့်ပေါ်မူတည်ပြီး ဂဏန်းထုတ်သည် (7 စက္ကန့် Interval ဖြစ်စေရန် သင်္ချာနည်းဖြင့် တွက်သည်)
-            const seed = Math.floor(now.getTime() / 7000); 
-            // 7 စက္ကန့်တိုင်းမှာ တူညီသော ကျပန်းဂဏန်းထွက်စေရန် Pseudo-random logic
-            const syncNum = (seed * 9301 + 49297) % 233280;
-            const finalNum = Math.floor((syncNum / 233280) * 100);
-            numEl.innerText = finalNum.toString().padStart(2, '0');
+            numEl.innerText = getSyncRandom();
         }
     }
-    // တစ်စက္ကန့်လျှင် တစ်ကြိမ် Check လုပ်သော်လည်း ၇ စက္ကန့်ပြည့်မှသာ ဂဏန်းပြောင်းမည်
-    setInterval(syncShuffle, 1000);
+    // တစ်စက္ကန့်ကို ၁ ကြိမ်ပဲ စစ်ဆေးပြီး လိုအပ်မှ ပြောင်းမယ်
+    setInterval(updateShuffle, 1000);
 
-    // ၃။ Firebase Listener
     onValue(ref(db, '/'), (snapshot) => {
         const data = snapshot.val();
         if (!data) return;
@@ -164,7 +170,7 @@
         else {
             numEl.classList.add('shuffling');
             numEl.classList.remove('fixed');
-            syncShuffle(); // Shuffling ပြန်ဖြစ်လျှင် ချက်ချင်း Sync လုပ်ရန်
+            numEl.innerText = getSyncRandom();
         }
 
         const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
@@ -183,5 +189,3 @@
 
 </body>
 </html>
-
-
