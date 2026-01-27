@@ -19,8 +19,9 @@
         .header { background: linear-gradient(135deg, var(--primary-blue), var(--accent-red), var(--gold)); color: white; padding: 25px 20px; text-align: center; border-bottom-left-radius: 35px; border-bottom-right-radius: 35px; }
         .logo-text { font-size: 20px; font-weight: bold; letter-spacing: 3px; margin-bottom: 12px; text-shadow: 1px 1px 4px rgba(0,0,0,0.3); }
         
-        .live-number { font-size: 100px; font-weight: bold; margin: 5px 0; display: inline-block; transition: all 0.4s ease; min-width: 140px; }
-        .shuffling { opacity: 0.8; color: #f1c40f; }
+        /* ဂဏန်းခုန်နှုန်း ပိုမြန်အောင် transition ကို လျှော့ထားသည် */
+        .live-number { font-size: 100px; font-weight: bold; margin: 5px 0; display: inline-block; min-width: 140px; font-variant-numeric: tabular-nums; }
+        .shuffling { opacity: 0.9; color: #f1c40f; }
         .fixed { opacity: 1; color: #ffffff; text-shadow: 0 4px 15px rgba(0,0,0,0.5); }
 
         .date-display { font-size: 14px; font-weight: 600; color: #f1c40f; margin-bottom: 5px; }
@@ -42,7 +43,6 @@
         .weekly-table thead th { background-color: #444; color: white; }
         .weekly-table tr:nth-child(even) { background-color: #f9f9f9; }
         .day-name { font-weight: bold; color: #1a2a6c; text-align: left; padding-left: 15px !important; background: #f0f0f0; width: 100px; }
-        .history-val { font-weight: 700; font-size: 15px; }
     </style>
 </head>
 <body>
@@ -61,27 +61,17 @@
         <table class="result-table">
             <thead>
                 <tr>
-                    <th>Time</th>
-                    <th>Set</th>
-                    <th>Value</th>
-                    <th>2D</th>
-                    <th>Tip</th>
+                    <th>Time</th><th>Set</th><th>Value</th><th>2D</th><th>Tip</th>
                 </tr>
             </thead>
             <tbody>
                 <tr class="morning-row">
                     <td style="color: var(--primary-blue);">12:01 Pm</td>
-                    <td id="m-set">--</td>
-                    <td id="m-val">--</td>
-                    <td id="m-2d" class="color-2d">--</td>
-                    <td id="m-tip" class="color-tip">--</td>
+                    <td id="m-set">--</td><td id="m-val">--</td><td id="m-2d" class="color-2d">--</td><td id="m-tip" class="color-tip">--</td>
                 </tr>
                 <tr class="evening-row">
                     <td style="color: var(--accent-red);">04:30 Pm</td>
-                    <td id="e-set">--</td>
-                    <td id="e-val">--</td>
-                    <td id="e-2d" class="color-2d">--</td>
-                    <td id="e-tip" class="color-tip">--</td>
+                    <td id="e-set">--</td><td id="e-val">--</td><td id="e-2d" class="color-2d">--</td><td id="e-tip" class="color-tip">--</td>
                 </tr>
             </tbody>
         </table>
@@ -89,11 +79,7 @@
         <div class="table-title">Weekly History</div>
         <table class="result-table weekly-table">
             <thead>
-                <tr>
-                    <th>Day</th>
-                    <th>12:01 Pm</th>
-                    <th>04:30 Pm</th>
-                </tr>
+                <tr><th>Day</th><th>12:01 Pm</th><th>04:30 Pm</th></tr>
             </thead>
             <tbody id="weekly-body"></tbody>
         </table>
@@ -116,33 +102,27 @@
         document.getElementById('display-date').innerText = now.toLocaleDateString('en-GB', dateOptions) + " (" + now.toLocaleDateString('en-US', dayOptions) + ")";
     }
     setInterval(updateDateTime, 1000);
-    updateDateTime();
 
-    // --- Sync & Random Shuffling Algorithm ---
-    function getSyncRandom() {
+    // --- High Speed Sync Random Logic ---
+    function getFastSyncRandom() {
         const now = new Date();
-        // ၇ စက္ကန့်တိုင်းမှာ Seed တစ်ခုပြောင်းမယ်
-        const seed = Math.floor(now.getTime() / 7000); 
+        // ၀.၁ စက္ကန့် (100ms) တိုင်းမှာ Seed တစ်ခုပြောင်းမယ်
+        const seed = Math.floor(now.getTime() / 100); 
         
-        // Linear Congruential Generator (LCG) - ဂဏန်းတွေ Random ဆန်ဆန် ကွဲထွက်နေအောင် တွက်ချက်ခြင်း
-        // Formula: (a * seed + c) % m
-        const a = 1664525;
-        const c = 1013904223;
-        const m = Math.pow(2, 32);
+        // Linear Congruential Generator (LCG) - အစဉ်လိုက်မဖြစ်အောင် ရောမွှေရန်
+        let x = (seed * 48271) % 2147483647;
+        let randomNum = Math.floor((x / 2147483647) * 100);
         
-        const randomHash = (a * seed + c) % m;
-        const finalNum = Math.floor((randomHash / m) * 100);
-        return finalNum.toString().padStart(2, '0');
+        return randomNum.toString().padStart(2, '0');
     }
 
-    function updateShuffle() {
+    // ၀.၁ စက္ကန့်တိုင်း ဂဏန်းကို အသစ်လဲမည်
+    setInterval(() => {
         const numEl = document.getElementById('num');
         if (numEl.classList.contains('shuffling')) {
-            numEl.innerText = getSyncRandom();
+            numEl.innerText = getFastSyncRandom();
         }
-    }
-    // တစ်စက္ကန့်ကို ၁ ကြိမ်ပဲ စစ်ဆေးပြီး လိုအပ်မှ ပြောင်းမယ်
-    setInterval(updateShuffle, 1000);
+    }, 100);
 
     onValue(ref(db, '/'), (snapshot) => {
         const data = snapshot.val();
@@ -159,6 +139,7 @@
         document.getElementById('e-tip').innerText = data.evening_tip || "--";
 
         const numEl = document.getElementById('num');
+        // Live Number Logic
         if (data.live_status === "fixed_m" && data.morning_set && data.morning_val) {
             numEl.innerText = data.morning_set.toString().slice(-1) + data.morning_val.toString().slice(-1);
             numEl.classList.replace('shuffling', 'fixed');
@@ -170,7 +151,6 @@
         else {
             numEl.classList.add('shuffling');
             numEl.classList.remove('fixed');
-            numEl.innerText = getSyncRandom();
         }
 
         const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
@@ -179,8 +159,8 @@
             weeklyHtml += `
                 <tr>
                     <td class="day-name">${day.toUpperCase()}</td>
-                    <td class="history-val" style="color: var(--accent-red);">${data[day + '_m'] || '--'}</td>
-                    <td class="history-val" style="color: var(--primary-blue);">${data[day + '_e'] || '--'}</td>
+                    <td style="color: var(--accent-red); font-weight:700;">${data[day + '_m'] || '--'}</td>
+                    <td style="color: var(--primary-blue); font-weight:700;">${data[day + '_e'] || '--'}</td>
                 </tr>`;
         });
         document.getElementById('weekly-body').innerHTML = weeklyHtml;
