@@ -31,20 +31,16 @@
         .result-section { padding: 25px 15px; }
         .table-title { border-left: 5px solid var(--accent-red); padding-left: 12px; margin: 25px 0 12px; font-weight: bold; color: var(--primary-blue); font-size: 18px; text-transform: uppercase; }
         
-        /* Today Table Styling */
         .result-table { width: 100%; border-collapse: collapse; text-align: center; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.08); margin-bottom: 20px; }
         .result-table thead th { background-color: var(--primary-blue); color: white; font-size: 12px; padding: 15px 5px; text-transform: uppercase; border: 0.5px solid rgba(255,255,255,0.1); }
         .result-table td { padding: 15px 5px; border: 1px solid #eee; font-size: 14px; font-weight: 600; }
 
-        /* Today Table Rows Coloring */
-        .morning-row { background-color: #f0f4ff; } /* Light blue for morning */
-        .evening-row { background-color: #fff9f0; } /* Light orange for evening */
+        .morning-row { background-color: #f0f4ff; }
+        .evening-row { background-color: #fff9f0; }
 
-        /* Target Colors */
         .color-2d { color: var(--accent-red) !important; font-weight: 800; font-size: 24px; }
         .color-tip { color: var(--success-green) !important; font-weight: 800; font-size: 17px; }
         
-        /* Weekly Table Styling */
         .weekly-table thead th { background-color: #444; color: white; }
         .weekly-table tr:nth-child(even) { background-color: #f9f9f9; }
         .day-name { font-weight: bold; color: #1a2a6c; text-align: left; padding-left: 15px !important; background: #f0f0f0; width: 100px; }
@@ -101,8 +97,7 @@
                     <th>04:30 Pm</th>
                 </tr>
             </thead>
-            <tbody id="weekly-body">
-                </tbody>
+            <tbody id="weekly-body"></tbody>
         </table>
     </div>
 </div>
@@ -126,20 +121,27 @@
     setInterval(updateDateTime, 1000);
     updateDateTime();
 
-    // ၂။ ၇ စက္ကန့်တစ်ခါ Shuffling
-    setInterval(() => {
+    // ၂။ Sync Shuffling Logic (ဖုန်းအားလုံး ဂဏန်းတူညီစေရန်)
+    function syncShuffle() {
         const numEl = document.getElementById('num');
         if (numEl.classList.contains('shuffling')) {
-            numEl.innerText = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+            const now = new Date();
+            // လက်ရှိ စက္ကန့်ပေါ်မူတည်ပြီး ဂဏန်းထုတ်သည် (7 စက္ကန့် Interval ဖြစ်စေရန် သင်္ချာနည်းဖြင့် တွက်သည်)
+            const seed = Math.floor(now.getTime() / 7000); 
+            // 7 စက္ကန့်တိုင်းမှာ တူညီသော ကျပန်းဂဏန်းထွက်စေရန် Pseudo-random logic
+            const syncNum = (seed * 9301 + 49297) % 233280;
+            const finalNum = Math.floor((syncNum / 233280) * 100);
+            numEl.innerText = finalNum.toString().padStart(2, '0');
         }
-    }, 7000);
+    }
+    // တစ်စက္ကန့်လျှင် တစ်ကြိမ် Check လုပ်သော်လည်း ၇ စက္ကန့်ပြည့်မှသာ ဂဏန်းပြောင်းမည်
+    setInterval(syncShuffle, 1000);
 
     // ၃။ Firebase Listener
     onValue(ref(db, '/'), (snapshot) => {
         const data = snapshot.val();
         if (!data) return;
 
-        // Morning & Evening Display
         document.getElementById('m-set').innerText = data.morning_set || "--";
         document.getElementById('m-val').innerText = data.morning_val || "--";
         document.getElementById('m-2d').innerText = data.morning_2d || "--";
@@ -150,7 +152,6 @@
         document.getElementById('e-2d').innerText = data.evening_2d || "--";
         document.getElementById('e-tip').innerText = data.evening_tip || "--";
 
-        // ၄။ Live Number Sync Logic
         const numEl = document.getElementById('num');
         if (data.live_status === "fixed_m" && data.morning_set && data.morning_val) {
             numEl.innerText = data.morning_set.toString().slice(-1) + data.morning_val.toString().slice(-1);
@@ -163,9 +164,9 @@
         else {
             numEl.classList.add('shuffling');
             numEl.classList.remove('fixed');
+            syncShuffle(); // Shuffling ပြန်ဖြစ်လျှင် ချက်ချင်း Sync လုပ်ရန်
         }
 
-        // ၅။ Weekly Table
         const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
         let weeklyHtml = "";
         days.forEach(day => {
@@ -182,4 +183,3 @@
 
 </body>
 </html>
-
