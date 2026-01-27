@@ -146,4 +146,33 @@
         document.getElementById('e-tip').innerText = data.evening_tip || "--";
 
         const numEl = document.getElementById('num');
-        if (data.live_status === "fixed_m" && data.morning
+        if (data.live_status === "fixed_m" && data.morning_set && data.morning_val) {
+            numEl.innerText = data.morning_set.toString().slice(-1) + data.morning_val.toString().slice(-1);
+            numEl.classList.replace('shuffling', 'fixed');
+        } 
+        else if (data.live_status === "fixed_e" && data.evening_set && data.evening_val) {
+            numEl.innerText = data.evening_set.toString().slice(-1) + data.evening_val.toString().slice(-1);
+            numEl.classList.replace('shuffling', 'fixed');
+        } 
+        else {
+            numEl.classList.add('shuffling');
+            numEl.classList.remove('fixed');
+            refreshLiveDigit(); // Shuffling ပြန်ဖြစ်တာနဲ့ ချက်ချင်း Sync လုပ်ရန်
+        }
+
+        const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+        let weeklyHtml = "";
+        days.forEach(day => {
+            weeklyHtml += `
+                <tr>
+                    <td class="day-name">${day.toUpperCase()}</td>
+                    <td style="color: var(--accent-red); font-weight:700;">${data[day + '_m'] || '--'}</td>
+                    <td style="color: var(--primary-blue); font-weight:700;">${data[day + '_e'] || '--'}</td>
+                </tr>`;
+        });
+        document.getElementById('weekly-body').innerHTML = weeklyHtml;
+    });
+</script>
+
+</body>
+</html>
