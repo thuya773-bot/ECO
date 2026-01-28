@@ -1,112 +1,189 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="my">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ECO 2D LIVE - Professional Database Sync</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ultimate Data Terminal - 2D & Global Market</title>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-blue: #1a2a6c;
             --accent-red: #b21f1f;
             --gold: #fdbb2d;
-            --success-green: #2ecc71;
             --dark-navy: #0b1426;
-            --glass: rgba(255, 255, 255, 0.15);
         }
-
-        body { font-family: 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; margin: 0; overflow-x: hidden; }
-        .app-container { width: 100%; max-width: 450px; background: white; min-height: 100vh; margin: 0 auto; position: relative; padding-bottom: 80px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
-
-        /* Header */
-        .header { background: linear-gradient(135deg, var(--primary-blue), var(--accent-red), var(--gold)); color: white; padding: 25px 20px 35px; text-align: center; border-bottom-left-radius: 40px; border-bottom-right-radius: 40px; position: relative; }
-        .next-btn { position: absolute; top: 18px; right: 18px; background: rgba(255, 255, 255, 0.25); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 7px 15px; border-radius: 25px; cursor: pointer; font-size: 11px; font-weight: bold; backdrop-filter: blur(5px); z-index: 100; }
+        body { font-family: 'Inter', sans-serif; background: #030712; color: white; margin: 0; overflow-x: hidden; }
+        .app-container { width: 100%; max-width: 450px; background: #f0f2f5; min-height: 100vh; margin: 0 auto; position: relative; padding-bottom: 80px; box-shadow: 0 0 50px rgba(0,0,0,0.5); color: #333; }
         
-        .logo-box { width: 75px; height: 75px; background: white; border-radius: 20px; margin: 0 auto 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); border: 2px solid var(--gold); }
-        .logo-main { color: var(--primary-blue); font-size: 18px; font-weight: 900; line-height: 1; }
-        .logo-sub { color: var(--accent-red); font-size: 10px; font-weight: bold; }
+        /* Navigation Styles */
+        .page { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .market-status { font-size: 12px; background: rgba(0,255,0,0.15); padding: 5px 18px; border-radius: 25px; display: inline-block; color: #00ff00; font-weight: bold; border: 1px solid rgba(0,255,0,0.3); margin-bottom: 10px; }
-        .clock-area { font-family: 'Courier New', monospace; font-size: 26px; font-weight: bold; margin-bottom: 5px; }
-        
-        /* Number Display */
-        .number-box { border: 2px solid rgba(255,255,255,0.6); padding: 15px; width: 85%; margin: 0 auto 15px; border-radius: 15px; background: rgba(0,0,0,0.15); backdrop-filter: blur(8px); }
-        .live-number { font-size: 100px; font-weight: 900; margin: 0; display: block; line-height: 1; transition: 0.3s; }
-        .shuffling { color: var(--gold); text-shadow: 0 0 25px rgba(253, 187, 45, 0.8); }
-        .fixed { color: white; animation: fadeIn 0.8s ease; }
-        @keyframes fadeIn { from { opacity: 0.5; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        /* 2D Styles */
+        .header-2d { background: linear-gradient(135deg, var(--primary-blue), var(--accent-red), var(--gold)); color: white; padding: 25px 20px 35px; text-align: center; border-bottom-left-radius: 40px; border-bottom-right-radius: 40px; }
+        .number-box { border: 2px solid rgba(255,255,255,0.6); padding: 15px; width: 80%; margin: 15px auto; border-radius: 20px; background: rgba(0,0,0,0.2); backdrop-filter: blur(10px); }
+        .live-number { font-size: 80px; font-weight: 900; line-height: 1; }
+        .shuffling { color: var(--gold); text-shadow: 0 0 20px rgba(253, 187, 45, 0.6); }
 
-        .set-val-bar { font-size: 17px; font-weight: 800; color: white; letter-spacing: 0.5px; }
+        /* Energy Styles */
+        .energy-page { background: #030712; color: white; min-height: 100vh; padding: 20px; }
+        .stat-card { background: #111827; border: 1px solid #1f2937; border-radius: 16px; padding: 15px; }
 
-        /* Tables */
-        .content { padding: 20px 15px; }
-        .section-title { border-left: 5px solid var(--accent-red); padding-left: 12px; margin: 25px 0 12px; font-weight: 800; color: var(--primary-blue); font-size: 18px; }
-        .res-table { width: 100%; border-collapse: collapse; text-align: center; background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
-        .res-table thead th { background: var(--primary-blue); color: white; padding: 14px 5px; font-size: 11px; text-transform: uppercase; }
-        .res-table td { padding: 16px 5px; border-bottom: 1px solid #f2f2f2; font-weight: bold; font-size: 15px; }
+        /* Footer Nav */
+        .footer-nav { position: fixed; bottom: 0; width: 100%; max-width: 450px; background: #ffffff; border-top: 1px solid #ddd; height: 70px; display: flex; justify-content: space-around; align-items: center; z-index: 1000; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; color: #94a3b8; transition: 0.3s; }
+        .nav-item.active { color: var(--accent-red); font-weight: bold; }
+        .nav-icon { font-size: 20px; margin-bottom: 4px; }
+        .nav-text { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* Analysis Page */
-        #analysis-page { display: none; background: var(--dark-navy); color: white; min-height: 100vh; padding: 20px; }
-        .stats-card { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .stat-item { background: var(--glass); padding: 18px; border-radius: 15px; text-align: center; }
-        .stat-value { font-size: 22px; font-weight: bold; color: var(--gold); }
-
-        /* Footer */
-        .footer-news { position: fixed; bottom: 0; width: 100%; max-width: 450px; background: #000; color: #00ff00; height: 45px; display: flex; align-items: center; overflow: hidden; border-top: 2px solid var(--accent-red); z-index: 100; }
-        .news-scroll { white-space: nowrap; animation: news-move 45s linear infinite; font-size: 13px; }
-        @keyframes news-move { 0% { transform: translateX(100%); } 100% { transform: translateX(-150%); } }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
-    <div id="home-page">
-        <button class="next-btn" onclick="togglePage('analysis-page')">ANALYSIS ➔</button>
-        <div class="header">
-            <div class="logo-box"><span class="logo-main">ECO</span><span class="logo-sub">2D LIVE</span></div>
-            <div class="market-status" id="m-status">● Market Open</div><br>
-            <div id="live-date" style="font-size:14px; opacity:0.9; margin-bottom:5px;">---</div>
-            <div class="clock-area" id="live-clock">00:00:00</div>
-            
+
+    <div id="page-2d" class="page active">
+        <div class="header-2d">
+            <div class="flex justify-center mb-4">
+                <div class="bg-white rounded-xl p-2 w-16 h-16 flex flex-col items-center justify-center shadow-lg">
+                    <span class="text-blue-900 font-black text-lg leading-none">ECO</span>
+                    <span class="text-red-600 font-bold text-[8px]">2D LIVE</span>
+                </div>
+            </div>
+            <div class="text-[12px] font-bold text-green-400 bg-green-500/10 px-4 py-1 rounded-full inline-block border border-green-500/30 mb-2" id="m-status">● Market Open</div>
+            <div id="live-clock" class="text-2xl font-mono font-bold mb-1">00:00:00</div>
+            <div id="live-date" class="text-[11px] opacity-80 mb-4 tracking-widest">---</div>
+
             <div class="number-box">
                 <span id="num" class="live-number shuffling">--</span>
             </div>
-            
-            <div class="set-val-bar">
+            <div class="font-bold text-sm tracking-widest uppercase">
                 SET: <span id="h-set">----.--</span> | VAL: <span id="h-val">-----.--</span>
             </div>
         </div>
 
-        <div class="content">
-            <div class="section-title">LIVE RESULTS</div>
-            <table class="res-table">
-                <thead><tr><th>Time</th><th>Set</th><th>Value</th><th>2D</th><th>Tip</th></tr></thead>
-                <tbody>
-                    <tr style="background:#f8faff"><td>12:01 PM</td><td id="m-set">--</td><td id="m-val">--</td><td id="m-2d" style="color:var(--accent-red); font-size:20px;">--</td><td id="m-tip" style="color:var(--success-green)">--</td></tr>
-                    <tr style="background:#fffcf8"><td>04:30 PM</td><td id="e-set">--</td><td id="e-val">--</td><td id="e-2d" style="color:var(--accent-red); font-size:20px;">--</td><td id="e-tip" style="color:var(--success-green)">--</td></tr>
-                </tbody>
-            </table>
-            <div class="section-title">WEEKLY HISTORY</div>
-            <table class="res-table"><tbody id="week-body"></tbody></table>
+        <div class="p-5">
+            <h3 class="border-l-4 border-red-600 pl-3 font-black text-gray-700 mb-4">TODAY RESULTS</h3>
+            <div class="bg-white rounded-2xl shadow-sm overflow-hidden mb-6">
+                <table class="w-full text-center">
+                    <thead class="bg-slate-800 text-white text-[10px] uppercase">
+                        <tr><th class="py-3">Time</th><th>Set</th><th>Value</th><th>2D</th><th>Tip</th></tr>
+                    </thead>
+                    <tbody class="text-sm font-bold">
+                        <tr class="border-b">
+                            <td class="py-4 text-gray-400 text-[10px]">12:01 PM</td>
+                            <td id="m-set">--</td><td id="m-val">--</td>
+                            <td id="m-2d" class="text-red-600 text-xl">--</td>
+                            <td id="m-tip" class="text-green-600">--</td>
+                        </tr>
+                        <tr>
+                            <td class="py-4 text-gray-400 text-[10px]">04:30 PM</td>
+                            <td id="e-set">--</td><td id="e-val">--</td>
+                            <td id="e-2d" class="text-red-600 text-xl">--</td>
+                            <td id="e-tip" class="text-green-600">--</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 class="border-l-4 border-blue-800 pl-3 font-black text-gray-700 mb-4 uppercase">Weekly History</h3>
+            <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+                <table class="w-full text-center text-sm"><tbody id="week-body" class="font-bold"></tbody></table>
+            </div>
         </div>
     </div>
 
-    <div id="analysis-page">
-        <button onclick="togglePage('home-page')" style="background:var(--glass); color:white; border:1px solid #444; padding:8px 18px; border-radius:10px; cursor:pointer; font-weight:bold;">➔ Back Home</button>
-        <div id="chart-main" style="margin-top:25px;"></div>
-        <div class="stats-card">
-            <div class="stat-item"><div style="font-size:10px; color:#999;">Daily High</div><div class="stat-value" id="d-high">--</div></div>
-            <div class="stat-item"><div style="font-size:10px; color:#999;">Daily Low</div><div class="stat-value" id="d-low">--</div></div>
+    <div id="page-energy" class="page">
+        <div class="energy-page">
+            <div class="flex justify-between items-center mb-8">
+                <h1 class="text-xl font-black italic">ENERGY <span class="text-amber-500">PRO</span></h1>
+                <div class="text-right">
+                    <p class="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Global Market</p>
+                    <div class="flex items-center gap-1 justify-end"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span><span class="text-[10px] text-green-500 font-bold">LIVE</span></div>
+                </div>
+            </div>
+
+            <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">🌐 Intl. Oil & Fuel Rates</h3>
+            <div class="flex gap-3 overflow-x-auto no-scrollbar mb-8">
+                <div class="stat-card min-w-[140px] border-l-4 border-amber-500">
+                    <p class="text-[9px] text-gray-400 font-bold uppercase">Brent Crude</p>
+                    <p id="brent-price" class="text-xl font-mono font-bold">$82.45</p>
+                    <span class="text-[10px] text-green-500 font-bold">+1.2%</span>
+                </div>
+                <div class="stat-card min-w-[140px] border-l-4 border-blue-500">
+                    <p class="text-[9px] text-gray-400 font-bold uppercase">WTI Crude</p>
+                    <p id="wti-price" class="text-xl font-mono font-bold">$77.10</p>
+                    <span class="text-[10px] text-red-500 font-bold">-0.3%</span>
+                </div>
+                <div class="stat-card min-w-[140px] border-l-4 border-green-500">
+                    <p class="text-[9px] text-gray-400 font-bold uppercase">Intl. Gas</p>
+                    <p class="text-xl font-mono font-bold">$1.31/L</p>
+                </div>
+            </div>
+
+            <div class="stat-card mb-6">
+                <div class="flex justify-between mb-4">
+                    <h2 id="asset-display" class="text-xs font-black uppercase text-gray-400">Trading View</h2>
+                    <select onchange="updateChartAsset(this.value)" class="bg-gray-800 text-[10px] px-2 py-1 rounded border-none outline-none">
+                        <option value="BTCUSDT">Bitcoin</option>
+                        <option value="ETHUSDT">Ethereum</option>
+                    </select>
+                </div>
+                <div id="energyChart"></div>
+                <div class="text-center mt-2">
+                    <p id="energy-live-price" class="text-2xl font-mono font-bold text-white">$0.00</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="stat-card text-center">
+                    <p class="text-[9px] font-bold text-gray-500">NATURAL GAS</p>
+                    <p class="text-lg font-bold font-mono">$1.84</p>
+                </div>
+                <div class="stat-card text-center">
+                    <p class="text-[9px] font-bold text-gray-500">HEATING OIL</p>
+                    <p class="text-lg font-bold font-mono">$2.71</p>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="footer-news">
-        <div style="background:var(--accent-red); color:white; padding:0 12px; height:100%; display:flex; align-items:center; font-size:11px; font-weight:bold; z-index:10;">INFO</div>
-        <div class="news-scroll">🔥 ECO 2D Live Professional Stock Market.Your investment will benefit you in the future. You just need to make the right choices and invest wisely. Good luck, my friend. 🔥</div>
+    <div id="page-market" class="page">
+        <div class="p-4 bg-slate-900 min-h-screen">
+            <h2 class="text-lg font-black text-red-500 italic mb-4">STADIUM LIVE FEED</h2>
+            <div class="bg-black rounded-2xl overflow-hidden shadow-2xl" style="height: 500px;">
+                <iframe src="https://www.scorebat.com/embed/livescore/" class="w-full h-full" frameborder="0"></iframe>
+            </div>
+            <div class="mt-6 p-4 bg-slate-800 rounded-xl">
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-2">Market Analysis</p>
+                <p class="text-xs text-gray-300 italic">"Global markets are showing high volatility today. Watch Brent Crude closely for fuel price impacts."</p>
+            </div>
+        </div>
     </div>
+
+    <div class="footer-nav">
+        <div class="nav-item active" onclick="switchPage('page-2d', this)">
+            <span class="nav-icon">📊</span>
+            <span class="nav-text">2D Live</span>
+        </div>
+        <div class="nav-item" onclick="switchPage('page-energy', this)">
+            <span class="nav-icon">⚡</span>
+            <span class="nav-text">Energy</span>
+        </div>
+        <div class="nav-item" onclick="switchPage('page-market', this)">
+            <span class="nav-icon">🏟️</span>
+            <span class="nav-text">Sports</span>
+        </div>
+    </div>
+
 </div>
 
 <script type="module">
+    // --- FIREBASE & 2D ENGINE ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
@@ -116,108 +193,99 @@
 
     let dbData = {};
 
-    window.togglePage = (id) => {
-        document.getElementById('home-page').style.display = id === 'home-page' ? 'block' : 'none';
-        document.getElementById('analysis-page').style.display = id === 'analysis-page' ? 'block' : 'none';
-        if(id === 'analysis-page') window.dispatchEvent(new Event('resize'));
-    };
-
-    // --- Shuffling Engine (Smart Sync with DB) ---
     function runLiveEngine() {
-        const numEl = document.getElementById('num');
-        
-        // Database က Result ကို Fixed လုပ်ထားရင် Shuffling ကို ရပ်မယ်
         if(dbData.live_status && dbData.live_status.includes("fixed")) {
-            if(dbData.live_status === "fixed_m") {
-                updateUI(dbData.morning_set, dbData.morning_val, dbData.morning_2d, "fixed");
-            } else if(dbData.live_status === "fixed_e") {
-                updateUI(dbData.evening_set, dbData.evening_val, dbData.evening_2d, "fixed");
-            }
+            const mode = dbData.live_status === "fixed_m" ? "morning" : "evening";
+            update2DUI(dbData[mode+'_set'], dbData[mode+'_val'], dbData[mode+'_2d'], "fixed");
         } else {
-            // မဟုတ်ရင် ပုံမှန်အတိုင်း Shuffle ဆက်လုပ်မယ်
             const now = new Date();
             const seed = Math.floor(now.getTime() / 4000); 
             let x = (seed * 1103515245 + 12345) % 2147483647;
-            
             const sInt = Math.floor((x / 2147483647) * 100) + 1340;
-            const sDec = Math.floor(Math.random() * 100).toString().padStart(2, '0');
             const vInt = Math.floor(((x+88) / 2147483647) * 4500) + 36500;
-            const vDec = Math.floor(Math.random() * 100).toString().padStart(2, '0');
-            
-            const finalS = `${sInt}.${sDec}`;
-            const finalV = `${vInt}.${vDec}`;
-            const finalD = finalS.split('.')[0].slice(-1) + finalV.split('.')[0].slice(-1);
-
-            updateUI(finalS, finalV, finalD, "shuffling");
+            const finalS = `${sInt}.${Math.floor(Math.random()*100).toString().padStart(2,'0')}`;
+            const finalV = `${vInt}.${Math.floor(Math.random()*100).toString().padStart(2,'0')}`;
+            update2DUI(finalS, finalV, finalS.split('.')[0].slice(-1) + finalV.split('.')[0].slice(-1), "shuffling");
         }
-        
-        setTimeout(runLiveEngine, Math.floor(Math.random() * 5000) + 3000);
+        setTimeout(runLiveEngine, 3000);
     }
 
-    function updateUI(s, v, d, mode) {
-        const num = document.getElementById('num');
-        num.innerText = d || "--";
-        num.className = `live-number ${mode}`;
-        
-        // ဒဿမကိန်းပါရင် ပါတဲ့အတိုင်း၊ မပါရင် .00 ထည့်ပြမယ်
-        document.getElementById('h-set').innerText = s ? (s.includes('.') ? s : s + ".00") : "----.--";
-        document.getElementById('h-val').innerText = v ? (v.includes('.') ? v : v + ".00") : "-----.--";
-        
-        if(mode === "shuffling") {
-            document.getElementById('d-high').innerText = (parseFloat(s) + 1.2).toFixed(2);
-            document.getElementById('d-low').innerText = (parseFloat(s) - 0.8).toFixed(2);
-        }
+    function update2DUI(s, v, d, mode) {
+        const el = document.getElementById('num');
+        el.innerText = d || "--";
+        el.className = `live-number ${mode}`;
+        document.getElementById('h-set').innerText = s || "----.--";
+        document.getElementById('h-val').innerText = v || "-----.--";
     }
 
-    // --- Firebase Sync ---
     onValue(ref(db, '/'), (snap) => {
         dbData = snap.val() || {};
-        
         document.getElementById('m-set').innerText = dbData.morning_set || "--";
-        document.getElementById('m-val').innerText = dbData.morning_val || "--";
         document.getElementById('m-2d').innerText = dbData.morning_2d || "--";
-        document.getElementById('m-tip').innerText = dbData.morning_tip || "--";
         document.getElementById('e-set').innerText = dbData.evening_set || "--";
-        document.getElementById('e-val').innerText = dbData.evening_val || "--";
         document.getElementById('e-2d').innerText = dbData.evening_2d || "--";
-        document.getElementById('e-tip').innerText = dbData.evening_tip || "--";
-
-        const status = document.getElementById('m-status');
-        if(dbData.live_status && dbData.live_status.includes("fixed")) {
-            status.innerText = "● Result Fixed"; status.style.color = "#ffcc00";
-        } else {
-            status.innerText = "● Market Open"; status.style.color = "#00ff00";
-        }
-
+        
         let rows = ""; ['mon','tue','wed','thu','fri','sat','sun'].forEach(day => {
-            rows += `<tr><td style="font-size:11px; background:#f5f5f5">${day.toUpperCase()}</td><td>${dbData[day+'_m']||'--'}</td><td>${dbData[day+'_e']||'--'}</td></tr>`;
+            rows += `<tr class="border-b"><td class="py-3 bg-gray-50 text-[10px]">${day.toUpperCase()}</td><td>${dbData[day+'_m']||'--'}</td><td>${dbData[day+'_e']||'--'}</td></tr>`;
         });
         document.getElementById('week-body').innerHTML = rows;
     });
 
-    runLiveEngine();
+    // --- GLOBAL ENERGY ENGINE ---
+    let energyChart;
+    let currentAsset = 'BTCUSDT';
+
+    function initEnergyChart() {
+        energyChart = new ApexCharts(document.querySelector("#energyChart"), {
+            series: [{ data: [] }],
+            chart: { height: 180, type: 'area', toolbar: {show:false}, sparkline: {enabled: true} },
+            stroke: { curve: 'smooth', width: 2 },
+            colors: ['#f59e0b'],
+            fill: { type: 'gradient', gradient: { opacityFrom: 0.5, opacityTo: 0 } }
+        });
+        energyChart.render();
+    }
+
+    async function syncEnergyData() {
+        try {
+            const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${currentAsset}&interval=1h&limit=20`);
+            const data = await res.json();
+            const points = data.map(d => ({ x: d[0], y: parseFloat(d[4]) }));
+            energyChart.updateSeries([{ data: points }]);
+            document.getElementById('energy-live-price').innerText = `$${points[points.length-1].y.toLocaleString()}`;
+            
+            document.getElementById('brent-price').innerText = `$${(81 + Math.random()*2).toFixed(2)}`;
+            document.getElementById('wti-price').innerText = `$${(76 + Math.random()*2).toFixed(2)}`;
+        } catch(e) {}
+    }
+
+    // --- APP CONTROLS ---
+    window.switchPage = (pageId, navEl) => {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        navEl.classList.add('active');
+        if(pageId === 'page-energy') {
+            window.dispatchEvent(new Event('resize'));
+            syncEnergyData();
+        }
+    }
+
+    window.updateChartAsset = (val) => {
+        currentAsset = val;
+        syncEnergyData();
+    }
 
     setInterval(() => {
         const n = new Date();
-        document.getElementById('live-clock').innerText = n.toLocaleTimeString([], { hour12: true });
+        document.getElementById('live-clock').innerText = n.toLocaleTimeString();
         document.getElementById('live-date').innerText = n.toDateString();
     }, 1000);
 
-    // Chart
-    let chart = new ApexCharts(document.querySelector("#chart-main"), {
-        series: [{ data: [] }],
-        chart: { type: 'candlestick', height: 320, toolbar: {show:false}, animations: {enabled: false} },
-        plotOptions: { candlestick: { colors: { upward: '#2ecc71', downward: '#e74c3c' } } },
-        xaxis: { labels: {show: false} }
-    });
-    chart.render();
-    setInterval(() => {
-        let d = []; for(let i=0; i<15; i++) {
-            let base = Math.floor(Math.random()*50) + 1300;
-            d.push({x: i, y:[base, base+5, base-5, base+2]});
-        }
-        chart.updateSeries([{data: d}]);
-    }, 5000);
+    runLiveEngine();
+    initEnergyChart();
+    setInterval(syncEnergyData, 30000);
 </script>
+
 </body>
 </html>
