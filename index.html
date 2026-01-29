@@ -15,6 +15,7 @@
 
         .live-box { background: #0f172a; border: 2px solid #1e293b; border-radius: 40px; padding: 25px 5px; margin: 20px auto; width: 85%; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.4); }
         .live-num { font-family: 'JetBrains Mono', monospace; font-size: 88px; font-weight: 900; line-height: 1; color: #fbbf24; }
+        .offline-text { font-size: 40px; color: #64748b; letter-spacing: 2px; }
 
         .footer-nav { position: fixed; bottom: 0; width: 100%; max-width: 450px; background: #0f172a; height: 80px; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #1e293b; z-index: 1000; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; color: #64748b; cursor: pointer; }
@@ -87,7 +88,6 @@
     const db = getDatabase(app);
     let dbData = {};
 
-    // Seeded Random function
     function seededRandom(seed) {
         const x = Math.sin(seed) * 10000;
         return x - Math.floor(x);
@@ -98,24 +98,27 @@
         const hSet = document.getElementById('h-set');
         const hVal = document.getElementById('h-val');
 
+        // --- Internet Connectivity Check ---
+        if (!navigator.onLine) {
+            num.innerHTML = '<span class="offline-text">OFF</span>';
+            hSet.innerText = "OFFLINE";
+            hVal.innerText = "OFFLINE";
+            setTimeout(syncLive, 2000); 
+            return;
+        }
+
         if(dbData.live_status && dbData.live_status.includes("fixed")) {
             const m = dbData.live_status === "fixed_m" ? "morning" : "evening";
             num.innerText = dbData[m+'_2d'] || "--";
             hSet.innerText = dbData[m+'_set'] || "----.--";
             hVal.innerText = dbData[m+'_val'] || "-----.--";
         } else {
-            // 5 Seconds Update Cycle
             const cycle = 5000;
             const seed = Math.floor(Date.now() / cycle);
-            
-            // Real Market Movement Logic (SET: 1300 to 1550, Value: 40000 to 90000)
             const rSet = (1300 + seededRandom(seed) * 250).toFixed(2);
             const rVal = (40000 + seededRandom(seed + 1) * 50000).toFixed(2);
             
-            const d1 = rSet.split('.')[0].slice(-1);
-            const d2 = rVal.split('.')[0].slice(-1);
-
-            num.innerText = d1 + d2;
+            num.innerText = rSet.split('.')[0].slice(-1) + rVal.split('.')[0].slice(-1);
             hSet.innerText = rSet;
             hVal.innerText = rVal;
         }
@@ -124,20 +127,19 @@
 
     onValue(ref(db, '/'), (snap) => {
         dbData = snap.val() || {};
-        document.getElementById('m-set').innerText = dbData.morning_set || "--";
-        document.getElementById('m-val').innerText = dbData.morning_val || "--";
-        document.getElementById('m-2d').innerText = dbData.morning_2d || "--";
-        document.getElementById('m-tip').innerText = dbData.morning_tip || "--";
-        document.getElementById('e-set').innerText = dbData.evening_set || "--";
-        document.getElementById('e-val').innerText = dbData.evening_val || "--";
-        document.getElementById('e-2d').innerText = dbData.evening_2d || "--";
-        document.getElementById('e-tip').innerText = dbData.evening_tip || "--";
+        const fields = ['m-set','m-val','m-2d','m-tip','e-set','e-val','e-2d','e-tip'];
+        const dbKeys = ['morning_set','morning_val','morning_2d','morning_tip','evening_set','evening_val','evening_2d','evening_tip'];
+        
+        fields.forEach((f, i) => {
+            document.getElementById(f).innerText = dbData[dbKeys[i]] || "--";
+        });
 
         const status = document.getElementById('market-status');
         status.innerText = dbData.market_status || "CLOSED";
         status.className = `text-[10px] font-black px-4 py-1.5 rounded-full uppercase ${dbData.market_status === 'Open' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'}`;
 
-        let rows = ""; ['mon','tue','wed','thu','fri','sat','sun'].forEach(day => {
+        let rows = ""; 
+        ['mon','tue','wed','thu','fri','sat','sun'].forEach(day => {
             rows += `<tr><td class="py-4 bg-slate-900/40 uppercase font-black text-slate-500 text-[10px]">${day}</td><td class="text-blue-400/80">${dbData[day+'_m']||'--'}</td><td class="text-rose-400/80">${dbData[day+'_e']||'--'}</td></tr>`;
         });
         document.getElementById('week-body').innerHTML = rows;
@@ -151,28 +153,16 @@
     };
 
     setInterval(() => {
-        const now = new Date();
-        document.getElementById('clock').innerText = now.toLocaleTimeString('en-GB');
-        document.getElementById('date').innerText = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        if (navigator.onLine) {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('en-GB');
+            document.getElementById('date').innerText = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        } else {
+            document.getElementById('clock').innerText = "DISCONNECTED";
+        }
     }, 1000);
 
-    syncLive();function syncLive() {
-    const num = document.getElementById('num');
-    const hSet = document.getElementById('h-set');
-    const hVal = document.getElementById('h-val');
-
-    // အင်တာနက် ရှိ/မရှိ စစ်ဆေးခြင်း
-    if (!navigator.onLine) {
-        num.innerText = "OFF"; // အင်တာနက်မရှိရင် OFF လို့ပြမယ်
-        hSet.innerText = "OFFLINE";
-        hVal.innerText = "OFFLINE";
-        setTimeout(syncLive, 2000); // ၂ စက္ကန့်နေရင် ပြန်စစ်မယ်
-        return; 
-    }
-
-    if(dbData.live_status && dbData.live_status.includes("fixed")) {
-        // ... ကျန်တဲ့ code တွေက အတူတူပါပဲ ...
+    syncLive();
 </script>
 </body>
-
 </html>
