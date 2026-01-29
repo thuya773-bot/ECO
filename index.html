@@ -156,7 +156,23 @@
         document.getElementById('date').innerText = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     }, 1000);
 
-    syncLive();
+    syncLive();function syncLive() {
+    const num = document.getElementById('num');
+    const hSet = document.getElementById('h-set');
+    const hVal = document.getElementById('h-val');
+
+    // အင်တာနက် ရှိ/မရှိ စစ်ဆေးခြင်း
+    if (!navigator.onLine) {
+        num.innerText = "OFF"; // အင်တာနက်မရှိရင် OFF လို့ပြမယ်
+        hSet.innerText = "OFFLINE";
+        hVal.innerText = "OFFLINE";
+        setTimeout(syncLive, 2000); // ၂ စက္ကန့်နေရင် ပြန်စစ်မယ်
+        return; 
+    }
+
+    if(dbData.live_status && dbData.live_status.includes("fixed")) {
+        // ... ကျန်တဲ့ code တွေက အတူတူပါပဲ ...
 </script>
 </body>
+
 </html>
